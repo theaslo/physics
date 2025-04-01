@@ -269,11 +269,15 @@ def analyze_projectile_motion(
     ax.plot(v0x * time_to_peak, max_height, 'go', label='Highest Point')
     ax.plot(range_distance, 0, 'mo', label='Landing Point')
     
-    # Add properly scaled initial velocity vector as an arrow
-    arrow_scale = 2  # Scale factor to make the arrow visible
-    ax.arrow(0, height, v0x * arrow_scale, v0y * arrow_scale, 
-             head_width=1, head_length=1, fc='red', ec='red',
-             label='Initial Velocity')
+    # Add properly scaled initial velocity vector as an arrow - make it VERY visible and larger
+    arrow_scale = 3  # Increased scale factor to make the arrow more visible
+    # Create a separate arrow that doesn't try to be part of the legend
+    ax.annotate('', xy=(v0x * arrow_scale, height + v0y * arrow_scale), 
+                xytext=(0, height), 
+                arrowprops=dict(facecolor='red', shrink=0.05, width=2, headwidth=8, headlength=10))
+    # Add a text label for the initial velocity vector
+    ax.text(v0x * arrow_scale / 2, height + v0y * arrow_scale / 2, 
+            'Initial Velocity', color='red', fontweight='bold', ha='center')
     
     # Add legend
     ax.legend()
@@ -284,6 +288,12 @@ def analyze_projectile_motion(
     
     # Use equal aspect ratio to prevent distortion
     ax.set_aspect('equal')
+    
+    # Add text annotation showing the max height value
+    ax.annotate(f'Max Height: {max_height:.1f} m', 
+                xy=(v0x * time_to_peak, max_height), 
+                xytext=(v0x * time_to_peak + 3, max_height + 1),
+                arrowprops=dict(facecolor='green', shrink=0.05))
     
     # Simplest possible way to save the figure
     output_dir = get_visualization_dir()
