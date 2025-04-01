@@ -179,7 +179,7 @@ def solve_kinematics(
     # Log the saved image location for troubleshooting
     print(f"Image saved to: {filename}")
     
-    # Create result with plain static visualization
+    # Create result with clear file path for viewing
     result = f"""
 Solution:
 Initial velocity (v₀): {v0} m/s
@@ -191,12 +191,9 @@ Acceleration (a): {a if a is not None else 'Not provided'} m/s²
 Equations used:
 {chr(10).join(equations_used)}
 
-<div>
-<h3>Position vs Time:</h3>
-<img src="data:image/png;base64,{img_data}" alt="Kinematics Graph" style="max-width:100%">
-</div>
+A position vs. time graph has been created showing motion with constant acceleration.
 
-The visualization has been saved to: {filename}
+Visualization saved to: {filename}
 """
     
     return result
@@ -254,62 +251,108 @@ def analyze_projectile_motion(
     x = v0x * t
     y = height + v0y * t - 0.5 * G * t**2
     
-    # Create a very basic visualization that will definitely work
-    fig, ax = plt.subplots(figsize=(8, 6))
+    # Enhance the projectile motion visualization with better scaling for different cases
+    # Save a higher quality image with larger figure size for better viewing
+    fig, ax = plt.subplots(figsize=(12, 9), dpi=150)  # Larger figure size and higher DPI
     
-    # Create a simple projectile motion plot
-    ax.plot(x, y, 'b-')
-    ax.set_xlabel('Distance (m)')
-    ax.set_ylabel('Height (m)')
-    ax.set_title('Projectile Motion Trajectory')
-    ax.grid(True)
+    # Create a simple projectile motion plot with thicker, more visible line
+    ax.plot(x, y, 'b-', linewidth=2.5, label='Trajectory')
+    ax.set_xlabel('Distance (m)', fontsize=12)
+    ax.set_ylabel('Height (m)', fontsize=12)
+    ax.set_title(f'Projectile Motion: v₀ = {initial_velocity} m/s, θ = {angle_degrees}°', fontsize=14)
+    ax.grid(True, linestyle='--', alpha=0.7)
     
-    # Add basic markers for key points
-    ax.plot(0, height, 'ro', label='Launch Point')
-    ax.plot(v0x * time_to_peak, max_height, 'go', label='Highest Point')
-    ax.plot(range_distance, 0, 'mo', label='Landing Point')
+    # Add basic markers for key points with larger size
+    ax.plot(0, height, 'ro', label='Launch Point', markersize=10)
+    ax.plot(v0x * time_to_peak, max_height, 'go', label='Highest Point', markersize=10)
+    ax.plot(range_distance, 0, 'mo', label='Landing Point', markersize=10)
     
-    # Add properly scaled initial velocity vector as an arrow - make it VERY visible and larger
-    arrow_scale = 3  # Increased scale factor to make the arrow more visible
-    # Create a separate arrow that doesn't try to be part of the legend
-    ax.annotate('', xy=(v0x * arrow_scale, height + v0y * arrow_scale), 
-                xytext=(0, height), 
-                arrowprops=dict(facecolor='red', shrink=0.05, width=2, headwidth=8, headlength=10))
-    # Add a text label for the initial velocity vector
-    ax.text(v0x * arrow_scale / 2, height + v0y * arrow_scale / 2, 
-            'Initial Velocity', color='red', fontweight='bold', ha='center')
+    # IMPORTANT: Draw the velocity vector with the simplest possible method
+    # Using ONLY plt.arrow for maximum compatibility
+    # Scale to make it visible but not too large
+    arrow_scale = 0.2 * range_distance / initial_velocity  # Scale based on range
     
-    # Add legend
-    ax.legend()
+    # Draw the velocity vector with a THICK, BRIGHT RED arrow that will definitely be visible
+    plt.arrow(0, height,               # Start at launch point 
+              v0x * arrow_scale,      # x component 
+              v0y * arrow_scale,      # y component
+              head_width=1.5,         # Very wide head
+              head_length=2.0,        # Long head
+              fc='red',               # Fill color
+              ec='red',               # Edge color
+              linewidth=3,            # Very thick line
+              length_includes_head=True)  # Length includes head size
+    
+    # Add text label with larger font and clear background
+    plt.text(v0x * arrow_scale/2, height + v0y * arrow_scale/2, 
+              f'v₀ = {initial_velocity} m/s, θ = {angle_degrees}°',
+              fontsize=14, fontweight='bold', color='red',
+              bbox=dict(facecolor='white', alpha=0.8, edgecolor='red', boxstyle='round'),
+              ha='center', va='center')
+    
+    # Skip the fancy arc and simplify the angle display
+    # Just draw a basic angle marker with a simple line
+    angle_radius = 8  # Fixed size in data units
+    # Draw a line to show the angle
+    end_x = angle_radius * np.cos(angle_rad)
+    end_y = height + angle_radius * np.sin(angle_rad)
+    plt.plot([0, end_x], [height, end_y], 'b--', linewidth=2)
+    plt.plot([0, angle_radius], [height, height], 'b--', linewidth=2)
+    
+    # Add a simple angle label
+    angle_pos_x = angle_radius * 0.5 * np.cos(angle_rad/2)
+    angle_pos_y = height + angle_radius * 0.5 * np.sin(angle_rad/2)
+    plt.text(angle_pos_x, angle_pos_y, f'{angle_degrees}°', 
+            color='blue', fontsize=14, fontweight='bold',
+            ha='center', va='center',
+            bbox=dict(facecolor='white', edgecolor='blue'))
+    
+    # Add very simple annotations with JUST text and arrows
+    plt.text(v0x * time_to_peak + 5, max_height + 1, 
+            f'Maximum Height: {max_height:.2f} m', fontsize=12, 
+            bbox=dict(facecolor='white', edgecolor='black'))
+    plt.plot([v0x * time_to_peak, v0x * time_to_peak + 5], 
+             [max_height, max_height + 1], 'g-', linewidth=2)
+    
+    # For range
+    plt.text(range_distance / 2, max_height / 3, 
+            f'Range: {range_distance:.2f} m', fontsize=12,
+            bbox=dict(facecolor='white', edgecolor='black'))
+    plt.plot([range_distance / 2, range_distance], 
+             [max_height / 3, 0], 'm-', linewidth=2)
+    
+    # Simplify the legend for better contrast
+    plt.legend(['Trajectory', 'Launch Point', 'Highest Point', 'Landing Point'], 
+              loc='upper right', fontsize=12, framealpha=1)
     
     # Set axis limits to show the full trajectory and match calculated values
-    ax.set_xlim(-5, range_distance + 5)
-    ax.set_ylim(-1, max_height * 1.1)  # Make sure max height is visible
+    plt.xlim(-angle_radius, range_distance * 1.1)
+    plt.ylim(-1, max_height * 1.2)  # Make sure max height is visible
     
     # Use equal aspect ratio to prevent distortion
-    ax.set_aspect('equal')
+    plt.gca().set_aspect('equal')
     
-    # Add text annotation showing the max height value
-    ax.annotate(f'Max Height: {max_height:.1f} m', 
-                xy=(v0x * time_to_peak, max_height), 
-                xytext=(v0x * time_to_peak + 3, max_height + 1),
-                arrowprops=dict(facecolor='green', shrink=0.05))
+    # Add grid
+    plt.grid(True)
     
-    # Simplest possible way to save the figure
+    # Simplest possible way to save the figure - use high quality
     output_dir = get_visualization_dir()
     filename = os.path.join(output_dir, 'projectile_motion.png')
-    fig.savefig(filename)
+    plt.savefig(filename, dpi=150, bbox_inches='tight')
     
-    # Convert to base64 in the simplest way
-    with open(filename, 'rb') as f:
-        img_data = base64.b64encode(f.read()).decode('utf-8')
+    # Also save a copy with timestamp to preserve multiple runs
+    import time
+    timestamp = int(time.time())
+    filename_ts = os.path.join(output_dir, f'projectile_motion_{timestamp}.png')
+    plt.savefig(filename_ts, dpi=150, bbox_inches='tight')
+    print(f"Additional copy saved with timestamp: {filename_ts}")
     
     plt.close(fig)
     
     # Log the saved image location
     print(f"Image saved to: {filename}")
     
-    # Create result with plain static visualization
+    # Create result with clear file path for viewing
     result = f"""
 Projectile Motion Analysis:
 Initial velocity: {initial_velocity} m/s at {angle_degrees}°
@@ -321,12 +364,10 @@ Key Parameters:
 - Time to land: {time_to_land:.2f} s
 - Range (horizontal distance): {range_distance:.2f} m
 
-<div>
-<h3>Trajectory:</h3>
-<img src="data:image/png;base64,{img_data}" alt="Projectile Motion Trajectory" style="max-width:100%">
-</div>
+A visualization has been created showing the trajectory, initial velocity vector ({initial_velocity} m/s), 
+launch angle ({angle_degrees}°), and maximum height ({max_height:.1f} m).
 
-The visualization has been saved to: {filename}
+Visualization saved to: {filename}
 """
     
     return result
@@ -376,19 +417,17 @@ def calculate_force(mass: float, acceleration: float) -> str:
     # Log the saved image location
     print(f"Image saved to: {filename}")
     
-    # Create result with plain static visualization
+    # Create result with clear file path for viewing
     return f"""
 Force Calculation:
 Mass (m): {mass} kg
 Acceleration (a): {acceleration} m/s²
 Force (F = ma): {force} N
 
-<div>
-<h3>Force Diagram:</h3>
-<img src="data:image/png;base64,{img_data}" alt="Force Diagram" style="max-width:100%">
-</div>
+A force diagram has been created showing the mass ({mass} kg), acceleration ({acceleration} m/s²),
+and resulting force ({force} N).
 
-The visualization has been saved to: {filename}
+Visualization saved to: {filename}
 """
 
 @mcp.tool()
